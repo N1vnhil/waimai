@@ -6,11 +6,13 @@ import com.sky.constant.StatusConstant;
 import com.sky.context.BaseContext;
 import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
+import com.sky.dto.EmployeePageQueryDTO;
 import com.sky.entity.Employee;
 import com.sky.exception.AccountLockedException;
 import com.sky.exception.AccountNotFoundException;
 import com.sky.exception.PasswordErrorException;
 import com.sky.mapper.EmployeeMapper;
+import com.sky.result.PageResult;
 import com.sky.service.EmployeeService;
 import net.bytebuddy.asm.Advice;
 import org.springframework.beans.BeanUtils;
@@ -19,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
@@ -82,6 +86,14 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         employeeMapper.insert(employee);
 
+    }
+
+    public PageResult pageQuery(EmployeePageQueryDTO employeePageQueryDTO) {
+        List<Employee> page = employeeMapper.pageQuery(employeePageQueryDTO);
+        PageResult pageResult = new PageResult();
+        pageResult.setTotal(page.size());
+        pageResult.setRecords(page);
+        return pageResult;
     }
 
 }
