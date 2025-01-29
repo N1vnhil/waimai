@@ -78,6 +78,8 @@ public class DishController {
     @ApiOperation("根据分类id查询菜品")
     public Result<List<Dish>> queryByCategoryId(Long categoryId) {
         log.info("根据分类id查询菜品：{}", categoryId);
-        return Result.success(dishService.getDishByCategoryId(categoryId));
+        Dish dish = new Dish();
+        dish.setCategoryId(categoryId);
+        return Result.success(dishService.list(dish));
     }
 }

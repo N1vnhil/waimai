@@ -20,6 +20,18 @@
         limit #{page}, #{pageSize}
     </select>
 
+    <select id="query" resultType="com.sky.entity.Dish">
+        select * from dish
+        <where>
+            <if test="id != null">and id=#{id}</if>
+            <if test="name != null">and name=#{name}</if>
+            <if test="categoryId != null">and category_id=#{categoryId}</if>
+            <if test="image != null">and image=#{image}</if>
+            <if test="description != null">and description=#{description}</if>
+            <if test="status != null">and status=#{status}</if>
+        </where>
+    </select>
+
     <update id="update">
         update dish
         <set>

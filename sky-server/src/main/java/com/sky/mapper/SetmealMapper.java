@@ -29,4 +29,6 @@ public interface SetmealMapper {
 
     @AutoFill(value = OperationType.UPDATE)
     int update(Setmeal setmeal);
+
+    List<Setmeal> query(Setmeal setmeal);
 }
