@@ -15,11 +15,14 @@ public class RedisConfiguration {
     public RedisTemplate<String, Object> createRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
         log.info("创建redis模板对象");
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
-//        redisTemplate.setDefaultSerializer(new StringRedisSerializer());
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
+        StringRedisSerializer serializer = new StringRedisSerializer();
+        redisTemplate.setKeySerializer(serializer);
+        redisTemplate.setHashKeySerializer(serializer);
         redisTemplate.setConnectionFactory(redisConnectionFactory);
-        return  redisTemplate;
+        return redisTemplate;
     }
 
 }
+
+
+
