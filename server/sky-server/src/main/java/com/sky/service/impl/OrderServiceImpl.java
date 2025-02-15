@@ -20,6 +20,7 @@ import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
 import lombok.extern.slf4j.Slf4j;
+import net.bytebuddy.asm.Advice;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -113,6 +114,7 @@ public class OrderServiceImpl implements OrderService {
             log.info("退款：{}", id);
             orders.setPayStatus(Orders.REFUND);
         }
+        orders.setCancelTime(LocalDateTime.now());
         orderMapper.update(orders);
     }
 
@@ -187,6 +189,7 @@ public class OrderServiceImpl implements OrderService {
             throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
         }
 
+        orders.setDeliveryTime(LocalDateTime.now());
         orders.setStatus(Orders.COMPLETED);
         orderMapper.update(orders);
     }
@@ -201,6 +204,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         orders.setStatus(Orders.CANCELLED);
+        orders.setCancelTime(LocalDateTime.now());
         orders.setRejectionReason(ordersRejectionDTO.getRejectionReason());
         orderMapper.update(orders);
     }
@@ -236,6 +240,7 @@ public class OrderServiceImpl implements OrderService {
 
         orders = list.get(0);
         orders.setStatus(Orders.TO_BE_CONFIRMED);
+        orders.setCheckoutTime(LocalDateTime.now());
         orders.setPayStatus(Orders.PAID);
         orderMapper.update(orders);
     }
