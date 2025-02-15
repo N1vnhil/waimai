@@ -1,6 +1,9 @@
 package com.sky.controller.user;
 
+import com.sky.context.BaseContext;
+import com.sky.dto.OrdersCancelDTO;
 import com.sky.dto.OrdersPageQueryDTO;
+import com.sky.dto.OrdersPaymentDTO;
 import com.sky.dto.OrdersSubmitDTO;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
@@ -40,14 +43,16 @@ public class OrderController {
         ordersPageQueryDTO.setPage(page);
         ordersPageQueryDTO.setPageSize(pageSize);
         ordersPageQueryDTO.setStatus(status);
-        PageResult result = orderService.page(ordersPageQueryDTO);
+        PageResult result = orderService.page(ordersPageQueryDTO, BaseContext.getCurrentId());
         return Result.success(result);
     }
 
     @PutMapping("/cancel/{id}")
     public Result cancel(@PathVariable Long id) {
         log.info("取消订单：{}", id);
-        orderService.cancelOrder(id);
+        OrdersCancelDTO ordersCancelDTO = new OrdersCancelDTO();
+        ordersCancelDTO.setId(id);
+        orderService.cancelOrder(ordersCancelDTO);
         return Result.success();
     }
 
@@ -65,4 +70,10 @@ public class OrderController {
          return Result.success();
     }
 
+    @PutMapping("/payment")
+    public Result pay(@RequestBody OrdersPaymentDTO ordersPaymentDTO) {
+        log.info("支付订单：{}", ordersPaymentDTO);
+        orderService.payOrder(ordersPaymentDTO);
+        return Result.success();
+    }
 }

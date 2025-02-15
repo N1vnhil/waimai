@@ -3,9 +3,7 @@ package com.sky.service.impl;
 import com.fasterxml.jackson.databind.cfg.CoercionConfig;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
-import com.sky.dto.OrdersDTO;
-import com.sky.dto.OrdersPageQueryDTO;
-import com.sky.dto.OrdersSubmitDTO;
+import com.sky.dto.*;
 import com.sky.entity.AddressBook;
 import com.sky.entity.OrderDetail;
 import com.sky.entity.ShoppingCart;
@@ -18,6 +16,7 @@ import com.sky.mapper.OrderMapper;
 import com.sky.mapper.ShoppingCartMapper;
 import com.sky.result.PageResult;
 import com.sky.service.OrderService;
+import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
 import lombok.extern.slf4j.Slf4j;
@@ -101,12 +100,14 @@ public class OrderServiceImpl implements OrderService {
         return orderSubmitVO;
     }
 
-    public void cancelOrder(Long id) {
+    public void cancelOrder(OrdersCancelDTO ordersCancelDTO) {
+        Long id = ordersCancelDTO.getId();
         Orders orders = orderMapper.getById(id);
         if(orders.getStatus().compareTo(Orders.TO_BE_CONFIRMED) >= 0) {
             throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
         }
 
+        orders.setCancelReason(ordersCancelDTO.getCancelReason());
         orders.setStatus(Orders.CANCELLED);
         if(orders.getPayStatus().equals(Orders.PAID)) {
             log.info("退款：{}", id);
@@ -115,9 +116,9 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.update(orders);
     }
 
-    public PageResult page(OrdersPageQueryDTO ordersPageQueryDTO) {
+    public PageResult page(OrdersPageQueryDTO ordersPageQueryDTO, Long userId) {
         ordersPageQueryDTO.setPage(ordersPageQueryDTO.getPage() - 1);
-        ordersPageQueryDTO.setUserId(BaseContext.getCurrentId());
+        if(userId != null) ordersPageQueryDTO.setUserId(userId);
 
         List<Orders> orders = orderMapper.pageQuery(ordersPageQueryDTO);
         PageResult pageResult = new PageResult();
@@ -158,5 +159,84 @@ public class OrderServiceImpl implements OrderService {
             BeanUtils.copyProperties(orderDetail, shoppingCart);
             shoppingCartMapper.insert(shoppingCart);
         });
+    }
+
+    public OrderStatisticsVO getStatistics() {
+        OrderStatisticsVO orderStatisticsVO = new OrderStatisticsVO();
+        Orders orders = new Orders();
+        orders.setStatus(Orders.TO_BE_CONFIRMED);
+        Integer toBeConfirmed = orderMapper.query(orders).size();
+
+        orders.setStatus(Orders.CONFIRMED);
+        Integer confirmed = orderMapper.query(orders).size();
+
+        orders.setStatus(Orders.DELIVERY_IN_PROGRESS);
+        Integer deliveryInProgress = orderMapper.query(orders).size();
+
+        orderStatisticsVO.setToBeConfirmed(toBeConfirmed);
+        orderStatisticsVO.setConfirmed(confirmed);
+        orderStatisticsVO.setDeliveryInProgress(deliveryInProgress);
+        return orderStatisticsVO;
+    }
+
+    public void completeOrder(Long id) {
+        Orders orders = orderMapper.getById(id);
+        if(orders == null) throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+
+        if(!orders.getStatus().equals(Orders.DELIVERY_IN_PROGRESS) && !orders.getPayStatus().equals(Orders.PAID)) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+
+        orders.setStatus(Orders.COMPLETED);
+        orderMapper.update(orders);
+    }
+
+    public void rejectOrder(OrdersRejectionDTO ordersRejectionDTO) {
+        Long id = ordersRejectionDTO.getId();
+        Orders orders = orderMapper.getById(id);
+
+        if(orders == null) throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        if(!orders.getStatus().equals(Orders.TO_BE_CONFIRMED)) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+
+        orders.setStatus(Orders.CANCELLED);
+        orders.setRejectionReason(ordersRejectionDTO.getRejectionReason());
+        orderMapper.update(orders);
+    }
+
+    public void confirmOrder(OrdersConfirmDTO ordersConfirmDTO) {
+        Orders orders = orderMapper.getById(ordersConfirmDTO.getId());
+        if(orders == null) throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        if(!orders.getStatus().equals(Orders.TO_BE_CONFIRMED)) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+
+        orders.setStatus(Orders.CONFIRMED);
+        orderMapper.update(orders);
+    }
+
+    public void deliverOrder(Long id) {
+        Orders orders = orderMapper.getById(id);
+        if(orders == null) throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        if(!orders.getStatus().equals(Orders.CONFIRMED)) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        orders.setStatus(Orders.DELIVERY_IN_PROGRESS);
+        orderMapper.update(orders);
+    }
+
+    public void payOrder(OrdersPaymentDTO ordersPaymentDTO) {
+        Orders orders = Orders.builder()
+                .number(ordersPaymentDTO.getOrderNumber())
+                .payMethod(ordersPaymentDTO.getPayMethod())
+                .build();
+        List<Orders> list = orderMapper.query(orders);
+        if(list == null || list.isEmpty()) throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+
+        orders = list.get(0);
+        orders.setStatus(Orders.TO_BE_CONFIRMED);
+        orders.setPayStatus(Orders.PAID);
+        orderMapper.update(orders);
     }
 }

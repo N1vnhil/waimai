@@ -18,4 +18,6 @@ public interface OrderMapper {
     void update(Orders orders);
 
     List<Orders> pageQuery(OrdersPageQueryDTO ordersPageQueryDTO);
+
+    List<Orders> query(Orders orders);
 }
