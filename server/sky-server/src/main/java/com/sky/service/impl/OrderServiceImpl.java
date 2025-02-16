@@ -1,5 +1,6 @@
 package com.sky.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.databind.cfg.CoercionConfig;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
@@ -19,6 +20,7 @@ import com.sky.service.OrderService;
 import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
+import com.sky.websocket.WebSocketServer;
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.asm.Advice;
 import org.springframework.beans.BeanUtils;
@@ -31,7 +33,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -48,6 +52,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private ShoppingCartMapper shoppingCartMapper;
+    @Autowired
+    private WebSocketServer webSocketServer;
 
     @Transactional
     public OrderSubmitVO submit(OrdersSubmitDTO ordersSubmitDTO) {
@@ -243,5 +249,16 @@ public class OrderServiceImpl implements OrderService {
         orders.setCheckoutTime(LocalDateTime.now());
         orders.setPayStatus(Orders.PAID);
         orderMapper.update(orders);
+    }
+
+    public void reminder(Long id) {
+        Orders orders = orderMapper.getById(id);
+        if(orders == null) throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+
+        Map map = new HashMap();
+        map.put("type", 2);
+        map.put("orderId", id);
+        map.put("content", "订单号：" + orders.getNumber());
+        webSocketServer.sendToAll(JSON.toJSONString(map));
     }
 }
