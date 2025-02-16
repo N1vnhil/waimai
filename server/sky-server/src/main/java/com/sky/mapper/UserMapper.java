@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.Map;
+
 @Mapper
 public interface UserMapper {
 
@@ -12,5 +14,7 @@ public interface UserMapper {
     User getByOpenid(String openid);
 
     int insert(User user);
+
+    Integer countByMap(Map map);
 
 }
