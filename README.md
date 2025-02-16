@@ -1,6 +1,6 @@
 # Waimai
 
-A restaurant deliver project developed by springboot.
+A restaurant delivery project developed by springboot.
 
 ## Server
 
